@@ -66,7 +66,7 @@ docker build -t shivjalkote/eks-nginx-app:v1 .
 docker run -d -p 8080:80 shivjalkote/eks-nginx-app:v1
 ```
 
-Visit: **http://localhost:8080**
+Visit: **http://a3500f773f6d44a779b14dec7b3a1d20-291289278.us-east-1.elb.amazonaws.com/**
 
 ### 3️⃣ Jenkins Configuration
 
@@ -125,7 +125,7 @@ spec:
 ## 🌐 Verify on EKS
 
 ```bash
-aws eks --region ap-south-1 update-kubeconfig --name my-eks-cluster
+aws eks --region us-east-1 update-kubeconfig --name my-eks-cluster
 kubectl get pods
 kubectl get svc
 ```
@@ -133,16 +133,16 @@ kubectl get svc
 **Example Output:**
 ```
 NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP                            PORT(S)        AGE
-hello-world-service   LoadBalancer   10.100.45.123   a1b2c3d4.ap-south-1.elb.amazonaws.com   80:31234/TCP   4m
+hello-world-service   LoadBalancer   10.100.45.123   a1b2c3d4.us-east-1.elb.amazonaws.com   80:31234/TCP   4m
 ```
 
-Visit: **http://a1b2c3d4.ap-south-1.elb.amazonaws.com**
+Visit: **[http://a1b2c3d4.ap-south-1.elb.amazonaws.com](http://a3500f773f6d44a779b14dec7b3a1d20-291289278.us-east-1.elb.amazonaws.com/)**
 
 ---
 
 ## 🧑‍💻 Author
 
-**👤 Shiv Jadhav**  
+**👤 Shivsamb Jalkote**  
 DevOps Engineer | AWS | Terraform | Kubernetes | CI/CD | Linux  
 📧 shivjalkote@example.com  
 🔗 [GitHub Profile](https://github.com/Shivsamb-Jalkote)
