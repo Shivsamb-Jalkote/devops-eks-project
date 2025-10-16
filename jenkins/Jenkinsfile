@@ -37,27 +37,28 @@ pipeline {
             }
         }
 
-        stage('Deploy to EKS via kubectl') {
-            steps {
-                echo "🚀 Deploying application to EKS..."
-                withCredentials([file(credentialsId: env.KUBECONFIG_CRED, variable: 'KUBECONF')]) {
-                    sh """
-                        mkdir -p ~/.kube
-                        cp $KUBECONF ~/.kube/config
-                        chmod 600 ~/.kube/config
+stage('Deploy to EKS via kubectl') {
+    steps {
+        echo "🚀 Deploying application to EKS..."
+        withCredentials([file(credentialsId: env.KUBECONFIG_CRED, variable: 'KUBECONF')]) {
+            sh """
+                mkdir -p ~/.kube
+                cp $KUBECONF ~/.kube/config
+                chmod 600 ~/.kube/config
 
-                        # Update image in deployment YAML before applying
-                        sed -i 's|image: .*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' ./k8s/deployment.yaml
+                # Update image in deployment file dynamically
+                sed -i 's|image: .*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' ./helm-chart/templates/deployment.yaml
 
-                        # Apply all Kubernetes manifests
-                        kubectl apply -f ./k8s/
+                # Apply all Kubernetes manifests
+                kubectl apply -f ./helm-chart/templates/
 
-                        # Wait for rollout
-                        kubectl rollout status deployment/hello-world-deployment --timeout=120s || true
-                    """
-                }
-            }
+                # Wait for rollout to complete
+                kubectl rollout status deployment/hello-world-deployment --timeout=120s || true
+            """
         }
+    }
+}
+
 
         stage('Verify Deployment') {
             steps {
