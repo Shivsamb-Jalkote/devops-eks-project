@@ -130,7 +130,7 @@ kubectl get pods
 kubectl get svc
 ```
 
-**Example Output:**
+** Output:**
 ```
 NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP                            PORT(S)        AGE
 hello-world-service   LoadBalancer   10.100.45.123   a1b2c3d4.us-east-1.elb.amazonaws.com   80:31234/TCP   4m
