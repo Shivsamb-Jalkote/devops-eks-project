@@ -1,24 +1,84 @@
 pipeline {
-  agent any
-  environment {
-    DOCKERHUB_CREDENTIALS = 'dockerhub-creds'
-    DOCKER_IMAGE = "shivjalkote/eks-nginx-app"
-    IMAGE_TAG = "v${env.BUILD_NUMBER}"
-    KUBECONFIG_CRED = 'kubeconfig-file'
-  }
-  stages {
-    stage('Checkout') { steps { checkout scm } }
-    stage('Build Docker Image') { steps { sh "docker build -t $DOCKER_IMAGE:$IMAGE_TAG ./app" } }
-    stage('Push to Docker Hub') { steps { withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS, usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) { sh '''    echo $DH_PASS | docker login -u $DH_USER --password-stdin
-docker push $DOCKER_IMAGE:$IMAGE_TAG
-''' } } }
-    stage('Deploy to EKS via Helm') { steps { withCredentials([file(credentialsId: env.KUBECONFIG_CRED, variable: 'KUBECONF')]) { sh '''    mkdir -p ~/.kube
-cp $KUBECONF ~/.kube/config
-chmod 600 ~/.kube/config
-helm repo update || true
-helm upgrade --install hello-release ./helm-chart --set image.repository=$DOCKER_IMAGE --set image.tag=$IMAGE_TAG --wait
-''' } } }
-    stage('Verify Deployment') { steps { sh "kubectl get svc hello-release -o wide || true" } }
-  }
-  post { always { sh 'docker image prune -af || true' } }
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = 'dockerhub-creds'
+        DOCKER_IMAGE = "shivjalkote/eks-nginx-app"
+        IMAGE_TAG = "v${env.BUILD_NUMBER}"
+        KUBECONFIG_CRED = 'kubeconfig-file'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "📦 Checking out source code..."
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "🐳 Building Docker image..."
+                sh """
+                    docker build -t $DOCKER_IMAGE:$IMAGE_TAG -f ./Dockerfile .
+                """
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                echo "📤 Pushing image to Docker Hub..."
+                withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS, usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
+                    sh """
+                        echo $DH_PASS | docker login -u $DH_USER --password-stdin
+                        docker push $DOCKER_IMAGE:$IMAGE_TAG
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to EKS via kubectl') {
+            steps {
+                echo "🚀 Deploying application to EKS..."
+                withCredentials([file(credentialsId: env.KUBECONFIG_CRED, variable: 'KUBECONF')]) {
+                    sh """
+                        mkdir -p ~/.kube
+                        cp $KUBECONF ~/.kube/config
+                        chmod 600 ~/.kube/config
+
+                        # Update image in deployment YAML before applying
+                        sed -i 's|image: .*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' ./k8s/deployment.yaml
+
+                        # Apply all Kubernetes manifests
+                        kubectl apply -f ./k8s/
+
+                        # Wait for rollout
+                        kubectl rollout status deployment/hello-world-deployment --timeout=120s || true
+                    """
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                echo "🔍 Verifying service exposure..."
+                sh """
+                    kubectl get svc -o wide
+                """
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "🧹 Cleaning up local Docker images..."
+            sh 'docker image prune -af || true'
+        }
+        success {
+            echo "✅ Deployment completed successfully!"
+        }
+        failure {
+            echo "❌ Deployment failed!"
+        }
+    }
 }
