@@ -1,6 +1,6 @@
 # 🚀 DevOps Engineer Task — Automated Kubernetes Deployment (EKS)
 
-![Project Banner](./app/Screenshot (823).png)
+app/Screenshot (823).png
 
 ## 📘 Project Overview
 This project demonstrates a complete **CI/CD pipeline** that automates the process of building, containerizing, and deploying a web application to an **Amazon EKS (Elastic Kubernetes Service)** cluster using **Jenkins**, **Docker**, **Kubernetes**, and **AWS**.
