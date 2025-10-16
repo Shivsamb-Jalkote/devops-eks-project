@@ -46,18 +46,19 @@ stage('Deploy to EKS via kubectl') {
                 cp $KUBECONF ~/.kube/config
                 chmod 600 ~/.kube/config
 
-                # Update image in deployment file dynamically
-                sed -i 's|image: .*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' ./helm-chart/templates/deployment.yaml
+                # Update image version dynamically
+                sed -i 's|image: .*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' ./k8s/deployment.yaml
 
-                # Apply all Kubernetes manifests
-                kubectl apply -f ./helm-chart/templates/
+                # Apply manifests
+                kubectl apply -f ./k8s/
 
-                # Wait for rollout to complete
-                kubectl rollout status deployment/hello-world-deployment --timeout=120s || true
+                # Wait for rollout
+                kubectl rollout status deployment/hello-world-deployment --timeout=120s
             """
         }
     }
 }
+
 
 
         stage('Verify Deployment') {
